@@ -4,6 +4,12 @@ A small, 100% client-side web app that extracts text from PDF or DOCX files, let
 
 **No backend.** Files are read in the browser via the File API, processed in memory, and discarded. Nothing is ever sent to a server or stored.
 
+## Inspiration
+
+This project came about after hearing someone complain that their Claude subscription was burning through tokens very quickly, even though they were already following good prompting practices. The one thing they were missing: extracting the text from PDFs and DOCX files first instead of uploading the raw documents directly to Claude.
+
+Since they didn’t have a simple tool to extract clean text from those files, they were sending the full binary payloads to the model (which consumes far more tokens). This extractor solves that — a lightweight, client-side way to pull out just the text, so you can feed Claude (or any LLM) clean, token-efficient input.
+
 ## Usage
 
 1. Drag & drop a `.pdf` or `.docx` file into the dotted area, or click to open the file picker.
@@ -17,12 +23,15 @@ Accessibility shortcuts: the drop zone is focusable (`Tab`) and can be activated
 
 - **Text-only PDFs.** No OCR. Scanned PDFs with no extractable text are detected and reported.
 - **Markdown from PDFs is an approximation.** Headings are inferred from font sizes, bullets and numbered lists are converted, but tables are not detected. Markdown from **DOCX** is faithful (mammoth + Turndown + GFM).
+
+**Token-efficient for LLMs.** By extracting clean text/Markdown from PDFs and DOCX files locally, you can paste just the content into Claude, ChatGPT, or other models instead of uploading large binary documents—avoiding unnecessary token consumption.
 - **50 MB max** per file.
-- Password-protected PDFs open on a password prompt (the user password only, never the owner/permissions password). The password is used in memory by pdf.js and never stored.
+- Password-protected **PDFs** open on a password prompt (the user password only, never the owner/permissions password). The password is used in memory by pdf.js and never stored.
+- Password-protected **DOCX** files (ECMA-376 OOXML Agile Encryption) open on a password prompt. The password is used in memory only to decrypt the ZIP, then discarded; nothing is stored.
 
 ## Handled cases
 
-Unsupported formats, multiple files dropped (only the first is processed with a warning), empty file, file too large, password-protected PDF (prompt, then wrong password), corrupted PDF, PDF with no extractable text, unreadable PDF page (extraction continues), unreadable DOCX, clipboard denied, unexpected errors. Non-blocking warnings are shown separately from the result.
+Unsupported formats, multiple files dropped (only the first is processed with a warning), empty file, file too large, password-protected PDF/DOCX (prompt, then wrong password), corrupted PDF, PDF with no extractable text, unreadable PDF page (extraction continues), unreadable DOCX, clipboard denied, unexpected errors. Non-blocking warnings are shown separately from the result.
 
 ## Tech stack
 
