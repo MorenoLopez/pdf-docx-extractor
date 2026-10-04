@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+html {
+  color-scheme: dark;
+  /* Avoids any light flash before the canvas's first frame. */
+  background-color: #030712;
+}
+
+body {
+  /* Safety net: no text should inherit the default black. */
+  color: var(--color-slate-100);
+}
+
+/*
+ * Decorative layer, canvas injected by src/components/AbyssBackground.ts
+ */
+#abyss {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: #030712;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "extracteur-pdf-docx",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "App 100% côté client qui extrait le texte d'un PDF ou DOCX et l'exporte en .txt ou .md",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "mammoth": "^1.8.0",
+    "pdfjs-dist": "^4.10.38",
+    "turndown": "^7.2.0",
+    "turndown-plugin-gfm": "^1.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "@types/turndown": "^5.0.6",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.7.3",
+    "vite": "^6.3.5"
+  }
+}
