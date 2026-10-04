@@ -368,7 +368,7 @@ function passwordForm(): HTMLElement {
       el('label', {
         for: 'pdf-password',
         class: 'text-sm font-semibold text-red-100',
-        text: 'Mot de passe du PDF',
+        text: 'Mot de passe du fichier',
       }),
       el('input', {
         id: 'pdf-password',
@@ -634,7 +634,7 @@ async function handleFileSelection(file: File, totalFiles = 1, password?: string
               elements.loadingProgress.textContent = progressLabel;
             },
           })
-        : await extractDocx(buffer);
+        : await extractDocx(buffer, password);
 
     const text = extracted.text;
     if (text.trim().length === 0) {

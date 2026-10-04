@@ -10,6 +10,7 @@ export type ExtractionErrorCode =
   | 'FILE_TOO_LARGE'
   | 'PASSWORD_REQUIRED'
   | 'PASSWORD_INCORRECT'
+  | 'ENCRYPTION_UNSUPPORTED'
   | 'PDF_INVALID'
   | 'PDF_NO_TEXT'
   | 'DOCX_INVALID'
@@ -25,8 +26,11 @@ export const MESSAGES: Record<ExtractionErrorCode, string> = {
   UNSUPPORTED_FORMAT: 'Format non pris en charge. Déposez un fichier PDF ou DOCX.',
   EMPTY_FILE: 'Ce fichier est vide, il ne contient aucune donnée.',
   FILE_TOO_LARGE: 'Ce fichier est trop volumineux (50 Mo maximum).',
-  PASSWORD_REQUIRED: 'Ce PDF est protégé par un mot de passe. Saisissez-le pour extraire le texte.',
+  PASSWORD_REQUIRED:
+    'Ce fichier est protégé par un mot de passe. Saisissez-le pour extraire le texte.',
   PASSWORD_INCORRECT: 'Mot de passe incorrect. Vérifiez la casse et réessayez.',
+  ENCRYPTION_UNSUPPORTED:
+    'Ce document utilise un chiffrement trop ancien pour être ouvert. Ré-enregistrez-le depuis Word ou LibreOffice.',
   PDF_INVALID: 'Ce fichier PDF est corrompu ou illisible.',
   PDF_NO_TEXT: "Ce PDF semble être un scan, il ne contient pas de texte extractible.",
   DOCX_INVALID:

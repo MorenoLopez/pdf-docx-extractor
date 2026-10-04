@@ -3,6 +3,7 @@ import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
 import type { DocxExtractionResult } from '../types';
 import { buildError, translateDocxError } from '../utils/errors';
+import { unencryptOoxml } from './ooxml-crypto';
 
 export type { DocxExtractionResult };
 
@@ -51,15 +52,24 @@ function tightenListMarkers(markdown: string): string {
   return markdown.replace(/^(\s*)([-*+]|\d+[.)])\s{2,}/gm, '$1$2 ');
 }
 
-export async function extractDocx(data: ArrayBuffer): Promise<DocxExtractionResult> {
+/**
+ * An encrypted `.docx` is an OLE container, not a zip, so mammoth needs the
+ * decrypted package first. An unencrypted one is returned untouched.
+ */
+export async function extractDocx(
+  data: ArrayBuffer,
+  password = '',
+): Promise<DocxExtractionResult> {
+  const zip = unencryptOoxml(data, password);
+
   let text: string;
   let html: string;
 
   try {
-    const raw = await mammoth.extractRawText({ arrayBuffer: data });
+    const raw = await mammoth.extractRawText({ arrayBuffer: zip });
     text = raw.value;
 
-    const converted = await mammoth.convertToHtml({ arrayBuffer: data }, { styleMap: STYLE_MAP });
+    const converted = await mammoth.convertToHtml({ arrayBuffer: zip }, { styleMap: STYLE_MAP });
     html = converted.value;
 
     for (const message of converted.messages) {
