@@ -15,6 +15,7 @@
     "cfb": "^1.2.2",
     "mammoth": "^1.8.0",
     "pdfjs-dist": "^4.10.38",
+    "tesseract.js": "^7.0.0",
     "turndown": "^7.2.0",
     "turndown-plugin-gfm": "^1.0.2"
   },

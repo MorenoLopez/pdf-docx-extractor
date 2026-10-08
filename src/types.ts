@@ -18,5 +18,13 @@ export interface PdfExtractionResult extends ExtractionResult {
   pages: number;
 }
 
+/** OCR extraction result: extends the base result with OCR metadata. */
+export interface OcrExtractionResult extends ExtractionResult {
+  /** True when OCR was used instead of direct text extraction. */
+  ocrUsed: true;
+  /** Languages used for OCR. */
+  ocrLanguages: string[];
+}
+
 /** File type recognised by the application. */
 export type FileKind = 'pdf' | 'docx';

@@ -3,6 +3,7 @@ import { createAbyssBackground } from './components/AbyssBackground';
 import { createToastHost } from './components/Toast';
 import { extractDocx, type DocxExtractionResult } from './extractors/docx';
 import { extractPdf, type PdfExtractionResult } from './extractors/pdf';
+import { extractPdfOcr } from './extractors/ocr';
 import { copyToClipboard } from './utils/clipboard';
 import { buildFileName, downloadTextFile } from './utils/download';
 import { el } from './utils/dom';
@@ -24,6 +25,10 @@ interface ExtractionResult {
   warnings: string[];
   /** True when the Markdown came from a font-size heuristic, not real structure. */
   markdownIsHeuristic: boolean;
+  /** True when OCR was used instead of direct text extraction. */
+  ocrUsed?: boolean;
+  /** Languages used for OCR. */
+  ocrLanguages?: string[];
 }
 
 /** Full class strings per state: Tailwind scans the source, nothing is computed. */
@@ -622,26 +627,79 @@ async function handleFileSelection(file: File, totalFiles = 1, password?: string
     const kind = detectKind(file.name);
     if (!kind) throw buildError('UNSUPPORTED_FORMAT');
 
-    progressLabel = 'Extraction en cours…';
+    progressLabel = 'Détection du type de contenu…';
     render();
 
-    const extracted: PdfExtractionResult | DocxExtractionResult =
-      kind === 'pdf'
-        ? await extractPdf(buffer, {
-            password,
+    let extracted: PdfExtractionResult | DocxExtractionResult | null = null;
+    let ocrUsed = false;
+    let ocrLanguages: string[] = [];
+
+    if (kind === 'pdf') {
+      // First, try regular text extraction
+      progressLabel = 'Extraction texte…';
+      render();
+
+      const regularExtracted = await extractPdf(buffer, {
+        password,
+        onProgress: (current, total) => {
+          progressLabel = `Page ${current} / ${total}`;
+          elements.loadingProgress.textContent = progressLabel;
+        },
+      });
+
+      // Check if the PDF has extractable text
+      const hasText = regularExtracted.text.trim().length > 0;
+
+      if (hasText) {
+        extracted = regularExtracted;
+      } else {
+        // No extractable text - try OCR for scanned documents
+        progressLabel = 'Détection PDF scanné, lancement OCR…';
+        render();
+
+        // Using extractPdfOcr instead of direct tesseract import
+        // We'll use our custom OCR extractor
+        try {
+          const ocrResult = await extractPdfOcr(buffer, {
+            languages: ['eng', 'fra'],
             onProgress: (current, total) => {
-              progressLabel = `Page ${current} / ${total}`;
+              progressLabel = `OCR page ${current} / ${total}`;
               elements.loadingProgress.textContent = progressLabel;
             },
-          })
-        : await extractDocx(buffer, password);
+          });
 
-    const text = extracted.text;
-    if (text.trim().length === 0) {
-      throw kind === 'pdf'
-        ? buildError('PDF_NO_TEXT')
-        : buildError('DOCX_INVALID', 'Le document ne contient aucun texte exploitable.');
+          extracted = {
+            ...ocrResult,
+            pages: ocrResult.pages,
+            text: ocrResult.text,
+            markdown: ocrResult.markdown,
+          } as PdfExtractionResult;
+          ocrUsed = true;
+          ocrLanguages = ['eng', 'fra'];
+          warnings.push('Texte non trouvé via extraction classique — OCR appliqué sur chaque page.');
+        } catch (ocrError) {
+          console.error('[extract-ocr] échec', ocrError);
+          // Show a more specific error rather than generic PDF_NO_TEXT
+          const ocrErrorMessage =
+            ocrError instanceof ExtractionError
+              ? ocrError.userMessage
+              : 'Erreur lors de l\'extraction OCR du PDF scanné';
+          throw buildError('OCR_FAILED', ocrErrorMessage);
+        }
+      }
+    } else {
+      extracted = await extractDocx(buffer, password);
     }
+
+    const text = extracted?.text ?? '';
+  // Only check for no text if OCR was not attempted
+  // If OCR was attempted (success or failure), we already show appropriate errors
+  const ocrWasAttempted = warnings.some(w => w.includes('OCR'));
+  if (text.trim().length === 0 && !ocrWasAttempted) {
+    throw kind === 'pdf'
+      ? buildError('PDF_NO_TEXT')
+      : buildError('DOCX_INVALID', 'Le document ne contient aucun texte exploitable.');
+  }
 
     // Only PDF reports a page count.
     const pages = isPdfResult(extracted) ? extracted.pages : null;
@@ -649,10 +707,11 @@ async function handleFileSelection(file: File, totalFiles = 1, password?: string
     result = {
       fileName: file.name,
       text,
-      markdown: extracted.markdown,
+      markdown: extracted?.markdown ?? '',
       pages,
-      warnings: [...warnings, ...extracted.warnings],
-      markdownIsHeuristic: kind === 'pdf',
+      warnings: [...warnings, ...(extracted?.warnings ?? [])],
+      markdownIsHeuristic: kind === 'pdf' && !ocrUsed,
+      ...(ocrUsed ? { ocrUsed, ocrLanguages } : {}),
     };
     view = 'result';
   } catch (err) {
@@ -714,6 +773,12 @@ function renderResult(): void {
 
   elements.metaFileName.textContent = result.fileName;
   elements.metaFileName.title = result.fileName;
+
+  // Add OCR language info to title if applicable
+  if (result.ocrUsed) {
+    const langTag = result.ocrLanguages!.map((l: string) => l.toUpperCase()).join(', ');
+    elements.metaFileName.title += ` (OCR: ${langTag})`;
+  }
 
   const parts: string[] = [];
   if (result.pages !== null) {

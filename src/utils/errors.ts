@@ -16,7 +16,8 @@ export type ExtractionErrorCode =
   | 'DOCX_INVALID'
   | 'READ_FAILED'
   | 'CLIPBOARD_DENIED'
-  | 'UNEXPECTED';
+  | 'UNEXPECTED'
+  | 'OCR_FAILED';
 
 /** Largest accepted file: 50 MB. */
 export const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -38,6 +39,7 @@ export const MESSAGES: Record<ExtractionErrorCode, string> = {
   READ_FAILED: 'Ce fichier a été modifié ou supprimé pendant sa lecture.',
   CLIPBOARD_DENIED: 'Copie impossible, sélectionnez le texte manuellement.',
   UNEXPECTED: 'Une erreur inattendue est survenue.',
+  OCR_FAILED: 'L\'extraction OCR a échoué. Le PDF scanné peut être corrompu ou utilise un format non supporté.',
 };
 
 export class ExtractionError extends Error {
